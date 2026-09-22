@@ -1,0 +1,12 @@
+{
+  "name": "resa-construction-website",
+  "version": "1.0.0",
+  "private": true,
+  "description": "RESA Construction residential construction and electrical services website",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "build": "node scripts/build.mjs && node --check server.js && node --check public/src/App.js && node --check public/src/main.js && node --check dist/server/index.js",
+    "run": "node server.js"
+  }
+}
