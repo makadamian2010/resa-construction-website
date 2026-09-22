@@ -42,7 +42,7 @@ function sendFile(filePath, response) {
     }
     response.writeHead(200, {
       'Content-Type': MIME_TYPES[path.extname(filePath).toLowerCase()] || 'application/octet-stream',
-      'Cache-Control': filePath.endsWith('.html') ? 'no-cache' : 'public, max-age=3600'
+      'Cache-Control': ['.html', '.js', '.css'].includes(path.extname(filePath).toLowerCase()) ? 'no-cache' : 'public, max-age=3600'
     });
     response.end(data);
   });
