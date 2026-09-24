@@ -1,0 +1,18 @@
+.projects-empty{display:none}
+.why-photo{height:370px;background:linear-gradient(145deg,#203b4f,#0a1825)}
+.why-photo .license-badge{left:50%;right:auto;top:50%;bottom:auto;transform:translate(-50%,-50%);white-space:nowrap}
+.projects .project-grid{display:block;columns:3 250px;column-gap:18px;border:0}
+.portfolio-card{display:inline-block;width:100%;margin:0 0 18px;break-inside:avoid;background:#142535;border:1px solid #405260;vertical-align:top}
+.portfolio-card a{display:block;text-decoration:none;color:#fff}
+.portfolio-card a:focus-visible{outline:3px solid #fff;outline-offset:4px}
+.portfolio-media{position:relative;overflow:hidden;background:#0a1825}
+.portfolio-media img{display:block;width:100%;height:auto;max-height:700px;object-fit:contain;transition:transform .3s ease}
+.portfolio-card:is(:hover,:focus-within) img{transform:scale(1.015)}
+.portfolio-media::after{content:'';position:absolute;inset:55% 0 0;background:linear-gradient(transparent,rgba(4,15,25,.82));pointer-events:none}
+.portfolio-action{position:absolute;right:16px;bottom:16px;z-index:1;display:inline-flex;align-items:center;gap:8px;padding:10px 13px;background:#fff;color:#102432;font:700 14px/1.2 Manrope,Arial,sans-serif;opacity:0;transform:translateY(5px);transition:opacity .2s ease,transform .2s ease}
+.portfolio-card:is(:hover,:focus-within) .portfolio-action{opacity:1;transform:none}
+.portfolio-card figcaption{padding:15px 17px;color:#fff;font:600 16px/1.5 Manrope,Arial,sans-serif}
+@media (hover:none){.portfolio-action{opacity:1;transform:none}}
+@media(max-width:580px){.projects .project-grid{columns:1}.portfolio-media img{max-height:none}}
+@media(max-width:580px){.why-photo{height:240px}}
+@media(prefers-reduced-motion:reduce){.portfolio-media img,.portfolio-action{transition:none}}
