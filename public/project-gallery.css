@@ -22,3 +22,4 @@
 @media(max-width:580px){.projects .project-grid{columns:1}.portfolio-media img{max-height:none}}
 @media(max-width:580px){.why-photo{height:260px}.why-photo .license-badge{left:16px;bottom:16px}.hero-image{background-position:center}}
 @media(prefers-reduced-motion:reduce){.portfolio-media img,.portfolio-action{transition:none}}
+.sms-note{display:flex;align-items:center;gap:8px;margin:4px 0 16px;color:#52656f;font:600 13px/1.5 Manrope,Arial,sans-serif}
