@@ -6,6 +6,7 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "build": "node scripts/build.mjs && node --check server.js && node --check public/src/App.js && node --check public/src/main.js && node --check dist/server/index.js"
+    "build": "node scripts/build.mjs && node --check server.js && node --check api/inquiry.js && node --check public/src/App.js && node --check public/src/main.js && node --check dist/server/index.js",
+    "test": "node scripts/test-inquiry.js"
   }
 }
