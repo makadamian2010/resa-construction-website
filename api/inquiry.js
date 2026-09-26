@@ -34,6 +34,13 @@ function escapeHtml(value) {
   })[character]);
 }
 
+function normalizeUsPhone(value) {
+  const digits = String(value || '').replace(/\D/g, '');
+  if (digits.length === 10) return `+1${digits}`;
+  if (digits.length === 11 && digits.startsWith('1')) return `+${digits}`;
+  return String(value || '').trim();
+}
+
 module.exports = async function inquiry(request, response) {
   setCors(request, response);
 
@@ -70,14 +77,39 @@ module.exports = async function inquiry(request, response) {
       return;
     }
 
-    if (!process.env.RESEND_API_KEY || !process.env.RESEND_FROM_EMAIL) {
-      console.error('RESA inquiry email is not configured.');
-      sendJson(response, 503, { error: 'Email delivery is temporarily unavailable. Please call 669-649-0932.' });
+    const requiredEnvironment = [
+      'RESEND_API_KEY',
+      'RESEND_FROM_EMAIL',
+      'TWILIO_ACCOUNT_SID',
+      'TWILIO_AUTH_TOKEN',
+      'TWILIO_FROM_NUMBER',
+      'INQUIRY_SMS_TO'
+    ];
+    const missingEnvironment = requiredEnvironment.filter(name => !process.env[name]);
+    if (missingEnvironment.length) {
+      console.error('RESA inquiry notifications are not configured:', missingEnvironment.join(', '));
+      sendJson(response, 503, { error: 'Inquiry delivery is temporarily unavailable. Please call 669-649-0932.' });
       return;
     }
 
     const value = key => escapeHtml(clean[key]).replace(/\n/g, '<br>');
-    const emailResponse = await fetch('https://api.resend.com/emails', {
+    const smsBody = [
+      'New RESA website inquiry',
+      `Name: ${clean.name}`,
+      `Phone: ${clean.phone}`,
+      `Email: ${clean.email}`,
+      `Project: ${clean.service}`,
+      `Message: ${clean.description.slice(0, 700)}`
+    ].join('\n');
+    const twilioBody = new URLSearchParams({
+      To: normalizeUsPhone(process.env.INQUIRY_SMS_TO),
+      From: normalizeUsPhone(process.env.TWILIO_FROM_NUMBER),
+      Body: smsBody
+    });
+    const twilioCredentials = Buffer.from(`${process.env.TWILIO_ACCOUNT_SID}:${process.env.TWILIO_AUTH_TOKEN}`).toString('base64');
+
+    const [emailResponse, smsResponse] = await Promise.all([
+      fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
@@ -91,7 +123,16 @@ module.exports = async function inquiry(request, response) {
         text: `New customer request received from RESA Construction website.\n\nCustomer Name: ${clean.name}\nPhone: ${clean.phone}\nEmail: ${clean.email}\nProject Location: ${clean.location}\nService Requested: ${clean.service}\nProject Description: ${clean.description}\nPreferred Contact Method: ${clean.contactMethod}`,
         html: `<p>New customer request received from RESA Construction website.</p><p><b>Customer Name:</b><br>${value('name')}</p><p><b>Phone:</b><br>${value('phone')}</p><p><b>Email:</b><br>${value('email')}</p><p><b>Project Location:</b><br>${value('location')}</p><p><b>Service Requested:</b><br>${value('service')}</p><p><b>Project Description:</b><br>${value('description')}</p><p><b>Preferred Contact Method:</b><br>${value('contactMethod')}</p>`
       })
-    });
+      }),
+      fetch(`https://api.twilio.com/2010-04-01/Accounts/${encodeURIComponent(process.env.TWILIO_ACCOUNT_SID)}/Messages.json`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Basic ${twilioCredentials}`,
+          'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: twilioBody.toString()
+      })
+    ]);
 
     if (!emailResponse.ok) {
       console.error('Resend inquiry delivery failed:', emailResponse.status, await emailResponse.text());
@@ -99,8 +140,15 @@ module.exports = async function inquiry(request, response) {
       return;
     }
 
+    if (!smsResponse.ok) {
+      console.error('Twilio inquiry notification failed:', smsResponse.status, await smsResponse.text());
+      sendJson(response, 502, { error: 'We received your inquiry, but could not complete the notification. Please call 669-649-0932.' });
+      return;
+    }
+
     const delivery = await emailResponse.json().catch(() => ({}));
-    sendJson(response, 200, { ok: true, id: delivery.id || null });
+    const smsDelivery = await smsResponse.json().catch(() => ({}));
+    sendJson(response, 200, { ok: true, emailId: delivery.id || null, smsSid: smsDelivery.sid || null });
   } catch (error) {
     console.error('Inquiry function error:', error.message);
     sendJson(response, 400, { error: 'We could not process your request. Please check the form and try again.' });
